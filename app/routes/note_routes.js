@@ -23,13 +23,11 @@ module.exports = function (app, db) {
     });
     app.post('/addOperation', (req, res) => {
         const operations = {
-            amount: "11",
-            currency: "RUB",
-            data: {time: "rrr",date:"ttt"},
-            account: "FFFFF"
+            amount: req.body.amount,
+            currency: req.body.currency,
+            data: req.body.data,
+            account: req.body.account
         };
-        console.log('addOperation');
-        console.dir(req);
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
