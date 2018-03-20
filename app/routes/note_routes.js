@@ -67,8 +67,8 @@ module.exports = function (app, db) {
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
-        const details = { '_id': new ObjectID(req.body.accountId) };
-        const note = { balance: req.body.amount };
+        const details = { '_id': new ObjectID(req.body._id) };
+        const note = { balance: req.body.balance };
         if (req.body.name) {
             note.name = req.body.name;
         }
