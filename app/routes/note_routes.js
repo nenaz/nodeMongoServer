@@ -4,10 +4,12 @@ module.exports = function (app, db) {
     // добавить операцию
     app.post('/addOperation', (req, res) => {
         const operations = {
-            amount: req.body.amount,
+            amount: req.body.balance,
             currency: req.body.currency,
             data: req.body.data,
-            account: req.body.account
+            account: req.body.account,
+            operCoord: req.body.operCoord,
+            typeOperation: req.body.typeOperation
         };
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
