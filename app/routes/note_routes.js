@@ -34,10 +34,7 @@ passport.deserializeUser(function (id, cb) {
 });
 
 module.exports = function (app, db) {
-    app.get('/', (req, res) => {
-        console.log('/')
-        res.send('hello');
-    })
+
     // добавить операцию
     app.post('/addOperation', (req, res) => {
         const operations = {
@@ -110,9 +107,12 @@ module.exports = function (app, db) {
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
+            name: req.body.name || '',
+            accountDate: req.body.accountDate || '',
+            accountNumber: req.body.accountNumber || '',
+            accountPeople: req.body.accountPeople || '',
         };
-        console.log(req.body)
-        db.collection('accounts').update(details, note, (err, result) => {
+        db.collection('accounts').update(details, { $set: note }, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
             } else {
@@ -122,18 +122,16 @@ module.exports = function (app, db) {
     });
 
     // обновление названия и сумму счета(редактирование)
-    app.post('/editAccount', (req, res) => {
+    app.post('/EditAccount', (req, res) => {
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
-            name: req.body.name,
-            accountDate: req.body.accountDate,
-            accountNumber: req.body.accountNumber,
-            accountPeople: req.body.accountPeople,
+            name: req.body.name || '',
+            accountDate: req.body.accountDate || '',
+            accountNumber: req.body.accountNumber || '',
+            accountPeople: req.body.accountPeople || '',
         };
-        console.log(note);
-        console.log(req.body.amount);
-        db.collection('accounts').update(details, { $set: note }, (err, result) => {
+        db.collection('accounts').update(details, note, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
             } else {
