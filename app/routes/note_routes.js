@@ -106,13 +106,9 @@ module.exports = function (app, db) {
     app.post('/updateAccountAmount', (req, res) => {
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
-            amount: req.body.amount,
-            name: req.body.name || '',
-            accountDate: req.body.accountDate || '',
-            accountNumber: req.body.accountNumber || '',
-            accountPeople: req.body.accountPeople || '',
+            amount: req.body.amount
         };
-        db.collection('accounts').update(details, { $set: note }, (err, result) => {
+        db.collection('accounts').update(details, note, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
             } else {
