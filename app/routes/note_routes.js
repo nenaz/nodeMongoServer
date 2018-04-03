@@ -3,37 +3,65 @@ var ObjectID = require('mongodb').ObjectID;
 var passport = require('passport');
 var Strategy = require('passport-local').Strategy;
 var db = require('../../config/db');
+var dataBase = require('../../db');
 
-passport.use(new Strategy(
-    function (username, password, cb) {
-        db.users.findByUsername(username, function (err, user) {
-            if (err) { return cb(err); }
-            if (!user) { return cb(null, false); }
-            if (user.password != password) { return cb(null, false); }
-            return cb(null, user);
-        });
-    }));
+// passport.use(new Strategy(
+//     function (username, password, cb) {
+//         dataBase.users.findByUsername(username, function (err, user) {
+//             if (err) { return cb(err); }
+//             if (!user) { return cb(null, false); }
+//             if (user.password != password) { return cb(null, false); }
+//             return cb(null, user);
+//         });
+//     })
+// );
 
 
-// Configure Passport authenticated session persistence.
-//
-// In order to restore authentication state across HTTP requests, Passport needs
-// to serialize users into and deserialize users out of the session.  The
-// typical implementation of this is as simple as supplying the user ID when
-// serializing, and querying the user record by ID from the database when
-// deserializing.
-passport.serializeUser(function (user, cb) {
-    cb(null, user.id);
-});
+// passport.serializeUser(function (user, cb) {
+//     console.log('user')
+//     console.log(user)
+//     cb(null, user.id);
+// });
 
-passport.deserializeUser(function (id, cb) {
-    db.users.findById(id, function (err, user) {
-        if (err) { return cb(err); }
-        cb(null, user);
-    });
-});
+// passport.deserializeUser(function (id, cb) {
+//     dataBase.users.findById(id, function (err, user) {
+//         if (err) { return cb(err); }
+//         cb(null, user);
+//     });
+// });
+const data = {};
 
 module.exports = function (app, db) {
+    passport.use(new Strategy(
+        function (username, password, cb) {
+            db.collection('users').
+                find({}).
+                toArray().
+                then((result) => {
+                    dataBase.users.findByUsername(result, username, password, function (err, user) {
+                        if (err) { return cb(err); }
+                        if (!user) { return cb(null, false); }
+                        if (user.password != password) { return cb(null, false); }
+                        return cb(null, user);
+                    });
+                }, (err) => {
+                    console.log('Error:', err);
+                }
+                );
+        })
+    );
+
+    passport.serializeUser(function (user, cb) {
+        cb(null, user);
+    });
+
+    passport.deserializeUser(function (user, cb) {
+        db.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
+            if (err) { return cb(err); }
+            console.log('3')
+            cb(null, user);
+        });
+    });
 
     // добавить операцию
     app.post('/addOperation', (req, res) => {
@@ -41,7 +69,11 @@ module.exports = function (app, db) {
             amount: req.body.amount,
             currency: req.body.currency,
             data: req.body.data,
-            account: req.body.account
+            account: req.body.id,
+            operCoord: req.body.operCoord,
+            typeOperation: req.body.typeOperation,
+            categoryId: req.body.categoryId,
+            typeOperation: req.body.typeOperation,
         };
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
@@ -77,7 +109,7 @@ module.exports = function (app, db) {
             date: req.body.date,
             number: req.body.number,
             people: req.body.people,
-            id: req.body._id
+            id: req.body._id,
         };
         console.log(req.body);
         db.collection('accounts').insert(account, (err, result) => {
@@ -140,18 +172,8 @@ module.exports = function (app, db) {
         });
     });
 
-    app.post('/Logon', passport.authenticate('local'),
+    app.post('/logon', passport.authenticate('local'),
         function (req, res) {
-            console.log(req.body);
-            const obj = {
-                result: true
-            }
-            res.send(obj);
-        });
-
-    app.get('/Logon', passport.authenticate('local'),
-        function (req, res) {
-            console.log(req.body);
             const obj = {
                 result: true
             }
