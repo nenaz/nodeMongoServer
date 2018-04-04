@@ -56,9 +56,8 @@ module.exports = function (app, db) {
     });
 
     passport.deserializeUser(function (user, cb) {
-        db.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
+        dataBase.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
             if (err) { return cb(err); }
-            console.log('3')
             cb(null, user);
         });
     });
@@ -172,7 +171,7 @@ module.exports = function (app, db) {
         });
     });
 
-    app.post('/logon', passport.authenticate('local'),
+    app.post('/authUser', passport.authenticate('local'),
         function (req, res) {
             const obj = {
                 result: true
