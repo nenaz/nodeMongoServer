@@ -178,4 +178,18 @@ module.exports = function (app, db) {
             }
             res.send(obj);
         });
+
+    app.post('/newUser', (req, res) => {
+        const addObj = {
+            username: 't1',
+            password: 't1'
+        }
+        db.collection('users').insert(addObj, (err, result) => {
+            if (err) {
+                res.send({ 'error': 'An error has occurred' });
+            } else {
+                res.send(result.ops[0]);
+            }
+        });
+    });
 };
