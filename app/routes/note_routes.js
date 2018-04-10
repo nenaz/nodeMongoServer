@@ -171,11 +171,34 @@ module.exports = function (app, db) {
         });
     });
 
-    app.post('/authUser', passport.authenticate('local'),
-        function (req, res) {
+    app.post('/authUser',
+        passport.authenticate('local'),
+        (req, res) => {
             const obj = {
                 result: true
             }
             res.send(obj);
+        }
+    );
+
+    app.post('/addUser', (req, res) => {
+        const newUser = {
+            name: req.body.name,
+            amount: req.body.amount,
+            currency: req.body.currency,
+            pname: req.body.pname,
+            date: req.body.date,
+            number: req.body.number,
+            people: req.body.people,
+            id: req.body._id,
+        };
+        console.log(req.body);
+        db.collection('users').insert(account, (err, result) => {
+            if (err) {
+                res.send({ 'error': 'An error has occurred' });
+            } else {
+                res.send(result.ops[0]);
+            }
         });
+    });
 };
