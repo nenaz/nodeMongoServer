@@ -10,11 +10,18 @@ const jwt = require('jwt-simple')
 
 var config = require('../../config/db')
 
-const data = {};
+
 
 module.exports = function (app, db) {
     // добавить операцию
     app.post('/addOperation', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         const operations = {
             amount: req.body.amount,
             currency: req.body.currency,
@@ -24,6 +31,7 @@ module.exports = function (app, db) {
             typeOperation: req.body.typeOperation,
             categoryId: req.body.categoryId,
             typeOperation: req.body.typeOperation,
+            username
         };
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
@@ -36,8 +44,17 @@ module.exports = function (app, db) {
 
     // получить последние 5 операций
     app.post('/getLastFive', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         db.collection('operations').
-            find({}).
+            find({
+                username
+            }).
             sort({ "_id": -1 }).
             limit(5).
             toArray().
@@ -45,12 +62,18 @@ module.exports = function (app, db) {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
 
     // добавить счет
     app.post('/addAccount', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         const account = {
             name: req.body.name,
             amount: req.body.amount,
@@ -60,8 +83,8 @@ module.exports = function (app, db) {
             number: req.body.number,
             people: req.body.people,
             id: req.body._id,
+            username,
         };
-        console.log(req.body);
         db.collection('accounts').insert(account, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
@@ -81,7 +104,9 @@ module.exports = function (app, db) {
             return res.sendStatus(401)
         }
         db.collection('accounts').
-            find({}).
+            find({
+                username
+            }).
             toArray().
             then((result) => {
                 res.send(result);
@@ -92,6 +117,13 @@ module.exports = function (app, db) {
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
@@ -111,6 +143,13 @@ module.exports = function (app, db) {
 
     // обновление названия и сумму счета(редактирование)
     app.post('/EditAccount', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
