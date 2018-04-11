@@ -5,63 +5,14 @@ var Strategy = require('passport-local').Strategy;
 var db = require('../../config/db');
 var dataBase = require('../../db');
 
-// passport.use(new Strategy(
-//     function (username, password, cb) {
-//         dataBase.users.findByUsername(username, function (err, user) {
-//             if (err) { return cb(err); }
-//             if (!user) { return cb(null, false); }
-//             if (user.password != password) { return cb(null, false); }
-//             return cb(null, user);
-//         });
-//     })
-// );
+const bcrypt = require('bcrypt')
+const jwt = require('jwt-simple')
 
+var config = require('../../config/db')
 
-// passport.serializeUser(function (user, cb) {
-//     console.log('user')
-//     console.log(user)
-//     cb(null, user.id);
-// });
-
-// passport.deserializeUser(function (id, cb) {
-//     dataBase.users.findById(id, function (err, user) {
-//         if (err) { return cb(err); }
-//         cb(null, user);
-//     });
-// });
 const data = {};
 
 module.exports = function (app, db) {
-    passport.use(new Strategy(
-        function (username, password, cb) {
-            db.collection('users').
-                find({}).
-                toArray().
-                then((result) => {
-                    dataBase.users.findByUsername(result, username, password, function (err, user) {
-                        if (err) { return cb(err); }
-                        if (!user) { return cb(null, false); }
-                        if (user.password != password) { return cb(null, false); }
-                        return cb(null, user);
-                    });
-                }, (err) => {
-                    console.log('Error:', err);
-                }
-                );
-        })
-    );
-
-    passport.serializeUser(function (user, cb) {
-        cb(null, user);
-    });
-
-    passport.deserializeUser(function (user, cb) {
-        dataBase.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
-            if (err) { return cb(err); }
-            cb(null, user);
-        });
-    });
-
     // добавить операцию
     app.post('/addOperation', (req, res) => {
         const operations = {
@@ -122,6 +73,13 @@ module.exports = function (app, db) {
 
     // получить список счетов
     app.post('/getAccounts', (req, res) => {
+        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username
+        } catch (err) {
+            console.log(err)
+            return res.sendStatus(401)
+        }
         db.collection('accounts').
             find({}).
             toArray().
@@ -129,8 +87,7 @@ module.exports = function (app, db) {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
 
     // обновить сумму у счетов после создания операции
@@ -171,11 +128,59 @@ module.exports = function (app, db) {
         });
     });
 
-    app.post('/authUser', passport.authenticate('local'),
-        function (req, res) {
-            const obj = {
-                result: true
+    app.post('/authUser', (req, res) => {
+        if (!req.body.username || !req.body.password) {
+            return res.sendStatus(400) 
+        } else {
+            const username = req.body.username
+            const password = req.body.password;
+            db.collection('users').
+                find({
+                    username: username,
+                    password: password,
+                }).
+                toArray().
+                then((result) => {
+                    if (!result.length) {
+                        return res.sendStatus(401);
+                    }
+                    bcrypt.compare(password, result[0].hash, (err, valid) => {
+                        console.log('valid = '+valid)
+                        if (err) {
+                            return res.sendStatus(500)
+                        }
+                        if (!valid) { return res.sendStatus(401) }
+                        const token = jwt.encode({ username: username }, config.secret)
+                        res.send({
+                            token,
+                            auth: true
+                        })
+                    })
+                }, (err) => {
+                    return res.sendStatus(500)
+                });
+        }
+    });
+    
+    app.post('/newUser', (req, res, next) => {
+        const note = {
+            username: req.body.username,
+            password: req.body.password,
+        }
+        bcrypt.hash(note.password, 10, (err, hash) => {
+            if (err) {
+                res.sendStatus(500);
             }
-            res.send(obj);
-        });
+            else {
+                note.hash = hash;
+                db.collection('users').insert(note, (err, result) => {
+                    if (err) {
+                        res.send({ 'error': 'An error has occurred' });
+                    } else {
+                        res.send(result.ops[0]);
+                    }
+                });
+            }
+        })
+    });
 };
