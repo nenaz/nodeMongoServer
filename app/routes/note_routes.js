@@ -31,36 +31,50 @@ var dataBase = require('../../db');
 // });
 const data = {};
 
+function testFunc(next) {
+    console.log('testFunc')
+    next()
+}
+
 module.exports = function (app, db) {
-    passport.use(new Strategy(
-        function (username, password, cb) {
-            db.collection('users').
-                find({}).
-                toArray().
-                then((result) => {
-                    dataBase.users.findByUsername(result, username, password, function (err, user) {
-                        if (err) { return cb(err); }
-                        if (!user) { return cb(null, false); }
-                        if (user.password != password) { return cb(null, false); }
-                        return cb(null, user);
-                    });
-                }, (err) => {
-                    console.log('Error:', err);
-                }
-                );
-        })
-    );
+    // passport.use(new Strategy(
+    //     function (username, password, cb) {
+    //         db.collection('users').
+    //             find({}).
+    //             toArray().
+    //             then((result) => {
+    //                 dataBase.users.findByUsername(result, username, password, function (err, user) {
+    //                     if (err) { return cb(err); }
+    //                     if (!user) { return cb(null, false); }
+    //                     if (user.password != password) { return cb(null, false); }
+    //                     return cb(null, user);
+    //                 });
+    //             }, (err) => {
+    //                 console.log('Error:', err);
+    //             }
+    //             );
+    //     })
+    // );
 
-    passport.serializeUser(function (user, cb) {
-        cb(null, user);
-    });
+    // passport.serializeUser(function (user, cb) {
+    //     cb(null, user);
+    // });
 
-    passport.deserializeUser(function (user, cb) {
-        dataBase.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
-            if (err) { return cb(err); }
-            cb(null, user);
-        });
-    });
+    // passport.deserializeUser(function (user, cb) {
+    //     dataBase.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
+    //         if (err) { return cb(err); }
+    //         cb(null, user);
+    //     });
+    // });
+
+    app.post('/editAccount', (req, res, next) => {
+        testFunc(next)
+        console.log('test1')
+        next('route')
+    }, (req, res, next) => {
+        console.log('test2')
+        next()
+    })
 
     // добавить операцию
     app.post('/addOperation', (req, res) => {
@@ -153,7 +167,8 @@ module.exports = function (app, db) {
     });
 
     // обновление названия и сумму счета(редактирование)
-    app.post('/EditAccount', (req, res) => {
+    app.post('/editAccount', (req, res, next) => {
+        console.log('test3')
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
