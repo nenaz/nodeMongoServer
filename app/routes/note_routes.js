@@ -1,42 +1,46 @@
-var ObjectID = require('mongodb').ObjectID;
-
-var passport = require('passport');
-var Strategy = require('passport-local').Strategy;
-var db = require('../../config/db');
-var dataBase = require('../../db');
-
-// passport.use(new Strategy(
-//     function (username, password, cb) {
-//         dataBase.users.findByUsername(username, function (err, user) {
-//             if (err) { return cb(err); }
-//             if (!user) { return cb(null, false); }
-//             if (user.password != password) { return cb(null, false); }
-//             return cb(null, user);
-//         });
-//     })
-// );
-
-
-// passport.serializeUser(function (user, cb) {
-//     console.log('user')
-//     console.log(user)
-//     cb(null, user.id);
-// });
-
-// passport.deserializeUser(function (id, cb) {
-//     dataBase.users.findById(id, function (err, user) {
-//         if (err) { return cb(err); }
-//         cb(null, user);
-//     });
-// });
-const data = {};
+import { ObjectID } from "mongodb";
+import db from "../../config/db";
 
 function testFunc(next) {
     console.log('testFunc')
     next()
 }
 
-module.exports = function (app, db) {
+
+function authenticate(req, res, next) {
+    const obj = {
+        result: true,
+        id: req.body.id,
+    }
+    // res.send(obj);
+    console.log('authenticate')
+    return obj;
+}
+
+const editAccount = () => {
+    console.log('editAccount')
+}
+
+const addAccount = () => {
+    console.log('addAccount')
+}
+
+const addOperation = () => {
+    console.log('addOperation')
+}
+
+const deleteAccount = () => {
+    console.log('deleteAccount')
+}
+
+
+
+export default function (app, db) {
+    app.use((req, res, next) => {
+        const obj = authenticate(req)
+        console.dir(obj)
+        next(obj);
+    });
     // passport.use(new Strategy(
     //     function (username, password, cb) {
     //         db.collection('users').
@@ -55,27 +59,23 @@ module.exports = function (app, db) {
     //             );
     //     })
     // );
-
     // passport.serializeUser(function (user, cb) {
     //     cb(null, user);
     // });
-
     // passport.deserializeUser(function (user, cb) {
     //     dataBase.users.findById(user, '5ac35d8b734d1d4f8afa3c2f', function (err, user) {
     //         if (err) { return cb(err); }
     //         cb(null, user);
     //     });
     // });
-
     app.post('/editAccount', (req, res, next) => {
-        testFunc(next)
-        console.log('test1')
-        next('route')
+        // testFunc(next);
+        // console.log(req.boby.id);
+        next('route');
     }, (req, res, next) => {
-        console.log('test2')
-        next()
-    })
-
+        console.log('test2');
+        next();
+    });
     // добавить операцию
     app.post('/addOperation', (req, res) => {
         const operations = {
@@ -91,12 +91,12 @@ module.exports = function (app, db) {
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
     });
-
     // получить последние 5 операций
     app.post('/getLastFive', (req, res) => {
         db.collection('operations').
@@ -108,10 +108,8 @@ module.exports = function (app, db) {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
-
     // добавить счет
     app.post('/addAccount', (req, res) => {
         const account = {
@@ -128,12 +126,12 @@ module.exports = function (app, db) {
         db.collection('accounts').insert(account, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
     });
-
     // получить список счетов
     app.post('/getAccounts', (req, res) => {
         db.collection('accounts').
@@ -143,10 +141,8 @@ module.exports = function (app, db) {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
-
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
         const details = { '_id': new ObjectID(req.body.id) };
@@ -160,15 +156,15 @@ module.exports = function (app, db) {
         db.collection('accounts').update(details, { $set: note }, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(note);
             }
         });
     });
-
     // обновление названия и сумму счета(редактирование)
     app.post('/editAccount', (req, res, next) => {
-        console.log('test3')
+        console.log('test3');
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
@@ -180,31 +176,30 @@ module.exports = function (app, db) {
         db.collection('accounts').update(details, note, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(note);
             }
         });
     });
-
-    app.post('/authUser', passport.authenticate('local'),
-        function (req, res) {
-            const obj = {
-                result: true
-            }
-            res.send(obj);
-        });
-
+    app.post('/authUser', function (req, res) {
+        const obj = {
+            result: true
+        };
+        res.send(obj);
+    });
     app.post('/newUser', (req, res) => {
         const addObj = {
             username: 't1',
             password: 't1'
-        }
+        };
         db.collection('users').insert(addObj, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
     });
-};
+}

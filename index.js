@@ -1,28 +1,25 @@
-const express = require('express');
-const MongoClient = require('mongodb').MongoClient;
-const bodyParser = require('body-parser');
-const db = require('./config/db');
+import { MongoClient } from "mongodb";
+import { urlencoded, json } from "body-parser";
+import { url } from "./config/db";
+import express from "express";
 const app = express();
 const PORT = process.env.PORT || 5000
-const passport = require('passport');
+import cookieParser from 'cookie-parser'
+import Routes from './app/routes'
 
-app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(require('morgan')('combined'));
-app.use(require('cookie-parser')());
-// app.use(require('express-session')({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
+app.use(urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
   next();
 });
-app.use(bodyParser.json());
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(json());
 
 
-MongoClient.connect(db.url, (err, database) => {
+MongoClient.connect(url, (err, database) => {
   if (err) return console.log(err)
-  require('./app/routes')(app, database);
+  Routes(app, database);
   app.listen(PORT, () => {
     console.log('We are live on ' + PORT);
   });
