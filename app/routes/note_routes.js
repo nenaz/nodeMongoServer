@@ -18,6 +18,17 @@ function authorization(req, res) {
     }
 }
 
+function editAccount(details, db, obj) {
+    db.collection('accounts').update(details, {$set: obj}, (err, result) => {
+        if (err) {
+            return { 'error': 'An error has occurred' };
+        }
+        else {
+            return result;
+        }
+    });
+}
+
 export default function (app, db) {
     app.post('/addOperation', (req, res) => {
         const username = authorization(req, res)
@@ -125,26 +136,38 @@ export default function (app, db) {
             }
         });
     });
+
     // обновление названия и сумму счета(редактирование)
-    app.post('/EditAccount', (req, res) => {
+    app.post('/editAccount', (req, res, next) => {
+        // const username = authorization(req, res)
+        // const details = { '_id': new ObjectID(req.body.id) };
+        // const note = {
+        //     amount: req.body.amount,
+        //     name: req.body.name || '',
+        //     accountDate: req.body.accountDate || '',
+        //     accountNumber: req.body.accountNumber || '',
+        //     accountPeople: req.body.accountPeople || '',
+        // };
+        console.log('editAccount')
         const username = authorization(req, res)
-        const details = { '_id': new ObjectID(req.body.id) };
-        const note = {
+        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
+        const res1 = editAccount(dFrom, db, {
             amount: req.body.amount,
-            name: req.body.name || '',
-            accountDate: req.body.accountDate || '',
-            accountNumber: req.body.accountNumber || '',
-            accountPeople: req.body.accountPeople || '',
-        };
-        db.collection('accounts').update(details, note, (err, result) => {
-            if (err) {
-                res.send({ 'error': 'An error has occurred' });
-            }
-            else {
-                res.send(note);
-            }
-        });
+        })
+        next()
+
+        // db.collection('accounts').update(details, note, (err, result) => {
+        //     if (err) {
+        //         res.send({ 'error': 'An error has occurred' });
+        //     }
+        //     else {
+        //         res.send(note);
+        //     }
+        // });
+    }, (req, res) => {
+        res.send(true)
     });
+
     app.post('/authUser', (req, res) => {
         if (!req.body.username || !req.body.password) {
             return res.sendStatus(400);
@@ -181,6 +204,7 @@ export default function (app, db) {
                 });
         }
     });
+
     app.post('/newUser', (req, res, next) => {
         const note = {
             username: req.body.username,
@@ -203,4 +227,25 @@ export default function (app, db) {
             }
         });
     });
+
+    app.post('/transfer', (req, res, next) => {
+        const username = authorization(req, res)
+        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
+        const res1 = editAccount(dFrom, db, {
+            amount: req.body.accountFromAmount - req.body.amount,
+        })
+        next()
+    }, (req, res, next) => {
+        const dTo = { '_id': new ObjectID(req.body.idTo) };
+        const res2 = editAccount(dTo, db, {
+            amount: req.body.accountToAmount + req.body.amount,
+        })
+        next()
+    }, (req, res) => {
+        // if (res1 && res2) {
+            res.send(true)
+        // } else {
+        //     res.send({ 'error': 'An error has occurred' })
+        // }
+    })
 }
