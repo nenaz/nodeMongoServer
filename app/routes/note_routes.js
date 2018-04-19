@@ -1,27 +1,26 @@
-var ObjectID = require('mongodb').ObjectID;
+import { ObjectID } from 'mongodb'
+import db from '../../config/db'
+import dataBase from '../../db'
+import bcrypt from 'bcrypt'
+import jwt from 'jwt-simple'
+import config from '../../config/db'
 
-var passport = require('passport');
-var Strategy = require('passport-local').Strategy;
-var db = require('../../config/db');
-var dataBase = require('../../db');
+function authorization(req, res) {
+    if (!req.headers['authorization']) {
+        return res.sendStatus(401);
+    }
+    try {
+        const username = jwt.decode(req.headers['authorization'], config.secret).username;
+        return req.body.username = username
+    }
+    catch (err) {
+        return res.sendStatus(401);
+    }
+}
 
-const bcrypt = require('bcrypt')
-const jwt = require('jwt-simple')
-
-var config = require('../../config/db')
-
-
-
-module.exports = function (app, db) {
-    // добавить операцию
+export default function (app, db) {
     app.post('/addOperation', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
-        try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
-        }
+        const username = authorization(req, res)
         const operations = {
             amount: req.body.amount,
             currency: req.body.currency,
@@ -36,21 +35,15 @@ module.exports = function (app, db) {
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
     });
-
     // получить последние 5 операций
     app.post('/getLastFive', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
-        try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
-        }
+        const username = authorization(req, res)
         db.collection('operations').
             find({
                 username
@@ -64,16 +57,9 @@ module.exports = function (app, db) {
                 console.log('Error:', err);
             });
     });
-
     // добавить счет
     app.post('/addAccount', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
-        try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
-        }
+        const username = authorization(req, res)
         const account = {
             name: req.body.name,
             amount: req.body.amount,
@@ -88,7 +74,8 @@ module.exports = function (app, db) {
         db.collection('accounts').insert(account, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
@@ -96,13 +83,7 @@ module.exports = function (app, db) {
 
     // получить список счетов
     app.post('/getAccounts', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
-        try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
-        }
+        const username = authorization(req, res)
         db.collection('accounts').
             find({
                 username
@@ -117,12 +98,15 @@ module.exports = function (app, db) {
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
+        if (!req.headers['authorization']) {
+            return res.sendStatus(401);
+        }
         try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
+            var username = jwt.decode(req.headers['authorization'], config.secret).username;
+        }
+        catch (err) {
+            console.log(err);
+            return res.sendStatus(401);
         }
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
@@ -135,21 +119,15 @@ module.exports = function (app, db) {
         db.collection('accounts').update(details, { $set: note }, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(note);
             }
         });
     });
-
     // обновление названия и сумму счета(редактирование)
     app.post('/EditAccount', (req, res) => {
-        if (!req.headers['authorization']) { return res.sendStatus(401) }
-        try {
-            var username = jwt.decode(req.headers['authorization'], config.secret).username
-        } catch (err) {
-            console.log(err)
-            return res.sendStatus(401)
-        }
+        const username = authorization(req, res)
         const details = { '_id': new ObjectID(req.body.id) };
         const note = {
             amount: req.body.amount,
@@ -161,17 +139,18 @@ module.exports = function (app, db) {
         db.collection('accounts').update(details, note, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(note);
             }
         });
     });
-
     app.post('/authUser', (req, res) => {
         if (!req.body.username || !req.body.password) {
-            return res.sendStatus(400) 
-        } else {
-            const username = req.body.username
+            return res.sendStatus(400);
+        }
+        else {
+            const username = req.body.username;
             const password = req.body.password;
             db.collection('users').
                 find({
@@ -184,28 +163,29 @@ module.exports = function (app, db) {
                         return res.sendStatus(401);
                     }
                     bcrypt.compare(password, result[0].hash, (err, valid) => {
-                        console.log('valid = '+valid)
+                        console.log('valid = ' + valid);
                         if (err) {
-                            return res.sendStatus(500)
+                            return res.sendStatus(500);
                         }
-                        if (!valid) { return res.sendStatus(401) }
-                        const token = jwt.encode({ username: username }, config.secret)
+                        if (!valid) {
+                            return res.sendStatus(401);
+                        }
+                        const token = jwt.encode({ username: username }, config.secret);
                         res.send({
                             token,
                             auth: true
-                        })
-                    })
+                        });
+                    });
                 }, (err) => {
-                    return res.sendStatus(500)
+                    return res.sendStatus(500);
                 });
         }
     });
-    
     app.post('/newUser', (req, res, next) => {
         const note = {
             username: req.body.username,
             password: req.body.password,
-        }
+        };
         bcrypt.hash(note.password, 10, (err, hash) => {
             if (err) {
                 res.sendStatus(500);
@@ -215,11 +195,12 @@ module.exports = function (app, db) {
                 db.collection('users').insert(note, (err, result) => {
                     if (err) {
                         res.send({ 'error': 'An error has occurred' });
-                    } else {
+                    }
+                    else {
                         res.send(result.ops[0]);
                     }
                 });
             }
-        })
+        });
     });
-};
+}
