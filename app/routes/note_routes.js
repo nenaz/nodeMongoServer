@@ -253,9 +253,25 @@ export default function (app, db) {
             }).
             toArray().
             then((result) => {
-                res.send(result[0].updateDescription);
+                res.send(result[0]);
             }, (err) => {
                 console.log('Error:', err);
             });
     })
+
+    app.post('/setShowNews', (req, res) => {
+        const username = authorization(req, res)
+        const id = { '_id': new ObjectID(req.body.id) };
+        const obj = {
+            show: false
+        }
+        db.collection('news').update(id, { $set: obj }, (err, result) => {
+            if (err) {
+                return { 'error': 'An error has occurred' };
+            }
+            else {
+                return result;
+            }
+        })
+    }) 
 }
