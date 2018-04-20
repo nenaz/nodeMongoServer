@@ -1,29 +1,64 @@
-var ObjectID = require('mongodb').ObjectID;
-module.exports = function (app, db) {
-    
-    // добавить операцию
+import { ObjectID } from 'mongodb'
+import db from '../../config/db'
+import dataBase from '../../db'
+import bcrypt from 'bcrypt'
+import jwt from 'jwt-simple'
+import config from '../../config/db'
+
+function authorization(req, res) {
+    if (!req.headers['authorization']) {
+        return res.sendStatus(401);
+    }
+    try {
+        const username = jwt.decode(req.headers['authorization'], config.secret).username;
+        return req.body.username = username
+    }
+    catch (err) {
+        return res.sendStatus(401);
+    }
+}
+
+function editAccount(details, db, obj) {
+    db.collection('accounts').update(details, {$set: obj}, (err, result) => {
+        if (err) {
+            return { 'error': 'An error has occurred' };
+        }
+        else {
+            return result;
+        }
+    });
+}
+
+export default function (app, db) {
     app.post('/addOperation', (req, res) => {
+        const username = authorization(req, res)
         const operations = {
-            amount: req.body.balance,
+            amount: req.body.amount,
             currency: req.body.currency,
             data: req.body.data,
-            account: req.body.account,
+            account: req.body.id,
             operCoord: req.body.operCoord,
-            typeOperation: req.body.typeOperation
+            typeOperation: req.body.typeOperation,
+            categoryId: req.body.categoryId,
+            typeOperation: req.body.typeOperation,
+            username
         };
         db.collection('operations').insert(operations, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
     });
-
     // получить последние 5 операций
     app.post('/getLastFive', (req, res) => {
+        const username = authorization(req, res)
         db.collection('operations').
-            find({}).
+            find({
+                username
+            }).
             sort({ "_id": -1 }).
             limit(5).
             toArray().
@@ -31,22 +66,27 @@ module.exports = function (app, db) {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
-
     // добавить счет
     app.post('/addAccount', (req, res) => {
+        const username = authorization(req, res)
         const account = {
             name: req.body.name,
-            balance: req.body.balance,
+            amount: req.body.amount,
             currency: req.body.currency,
-            pname: req.body.pname
+            pname: req.body.pname,
+            date: req.body.date,
+            number: req.body.number,
+            people: req.body.people,
+            id: req.body._id,
+            username,
         };
         db.collection('accounts').insert(account, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(result.ops[0]);
             }
         });
@@ -54,43 +94,158 @@ module.exports = function (app, db) {
 
     // получить список счетов
     app.post('/getAccounts', (req, res) => {
+        const username = authorization(req, res)
         db.collection('accounts').
-            find({}).
+            find({
+                username
+            }).
             toArray().
             then((result) => {
                 res.send(result);
             }, (err) => {
                 console.log('Error:', err);
-            }
-            );
+            });
     });
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
-        const details = { '_id': new ObjectID(req.body._id) };
-        const note = { balance: req.body.balance };
-        if (req.body.name) {
-            note.name = req.body.name;
+        if (!req.headers['authorization']) {
+            return res.sendStatus(401);
         }
-        db.collection('accounts').update(details, {$set: note}, (err, result) => {
+        try {
+            var username = jwt.decode(req.headers['authorization'], config.secret).username;
+        }
+        catch (err) {
+            console.log(err);
+            return res.sendStatus(401);
+        }
+        const details = { '_id': new ObjectID(req.body.id) };
+        const note = {
+            amount: req.body.amount,
+            name: req.body.name,
+            accountDate: req.body.accountDate,
+            accountNumber: req.body.accountNumber,
+            accountPeople: req.body.accountPeople,
+        };
+        db.collection('accounts').update(details, { $set: note }, (err, result) => {
             if (err) {
                 res.send({ 'error': 'An error has occurred' });
-            } else {
+            }
+            else {
                 res.send(note);
             }
         });
     });
 
     // обновление названия и сумму счета(редактирование)
-    app.post('/EditAccount', (req, res) => {
-        const details = { '_id': new ObjectID(req.body.id) };
-        const note = { balance: type + req.body.accountBalance };
-        db.collection('accounts').update(details, note, (err, result) => {
+    app.post('/editAccount', (req, res, next) => {
+        // const username = authorization(req, res)
+        // const details = { '_id': new ObjectID(req.body.id) };
+        // const note = {
+        //     amount: req.body.amount,
+        //     name: req.body.name || '',
+        //     accountDate: req.body.accountDate || '',
+        //     accountNumber: req.body.accountNumber || '',
+        //     accountPeople: req.body.accountPeople || '',
+        // };
+        console.log('editAccount')
+        const username = authorization(req, res)
+        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
+        const res1 = editAccount(dFrom, db, {
+            amount: req.body.amount,
+        })
+        next()
+
+        // db.collection('accounts').update(details, note, (err, result) => {
+        //     if (err) {
+        //         res.send({ 'error': 'An error has occurred' });
+        //     }
+        //     else {
+        //         res.send(note);
+        //     }
+        // });
+    }, (req, res) => {
+        res.send(true)
+    });
+
+    app.post('/authUser', (req, res) => {
+        if (!req.body.username || !req.body.password) {
+            return res.sendStatus(400);
+        }
+        else {
+            const username = req.body.username;
+            const password = req.body.password;
+            db.collection('users').
+                find({
+                    username: username,
+                    password: password,
+                }).
+                toArray().
+                then((result) => {
+                    if (!result.length) {
+                        return res.sendStatus(401);
+                    }
+                    bcrypt.compare(password, result[0].hash, (err, valid) => {
+                        console.log('valid = ' + valid);
+                        if (err) {
+                            return res.sendStatus(500);
+                        }
+                        if (!valid) {
+                            return res.sendStatus(401);
+                        }
+                        const token = jwt.encode({ username: username }, config.secret);
+                        res.send({
+                            token,
+                            auth: true
+                        });
+                    });
+                }, (err) => {
+                    return res.sendStatus(500);
+                });
+        }
+    });
+
+    app.post('/newUser', (req, res, next) => {
+        const note = {
+            username: req.body.username,
+            password: req.body.password,
+        };
+        bcrypt.hash(note.password, 10, (err, hash) => {
             if (err) {
-                res.send({ 'error': 'An error has occurred' });
-            } else {
-                res.send(note);
+                res.sendStatus(500);
+            }
+            else {
+                note.hash = hash;
+                db.collection('users').insert(note, (err, result) => {
+                    if (err) {
+                        res.send({ 'error': 'An error has occurred' });
+                    }
+                    else {
+                        res.send(result.ops[0]);
+                    }
+                });
             }
         });
     });
-};
+
+    app.post('/transfer', (req, res, next) => {
+        const username = authorization(req, res)
+        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
+        const res1 = editAccount(dFrom, db, {
+            amount: req.body.accountFromAmount - req.body.amount,
+        })
+        next()
+    }, (req, res, next) => {
+        const dTo = { '_id': new ObjectID(req.body.idTo) };
+        const res2 = editAccount(dTo, db, {
+            amount: req.body.accountToAmount + req.body.amount,
+        })
+        next()
+    }, (req, res) => {
+        // if (res1 && res2) {
+            res.send(true)
+        // } else {
+        //     res.send({ 'error': 'An error has occurred' })
+        // }
+    })
+}
