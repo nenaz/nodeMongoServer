@@ -139,15 +139,6 @@ export default function (app, db) {
 
     // обновление названия и сумму счета(редактирование)
     app.post('/editAccount', (req, res, next) => {
-        // const username = authorization(req, res)
-        // const details = { '_id': new ObjectID(req.body.id) };
-        // const note = {
-        //     amount: req.body.amount,
-        //     name: req.body.name || '',
-        //     accountDate: req.body.accountDate || '',
-        //     accountNumber: req.body.accountNumber || '',
-        //     accountPeople: req.body.accountPeople || '',
-        // };
         console.log('editAccount')
         const username = authorization(req, res)
         const dFrom = { '_id': new ObjectID(req.body.idFrom) };
@@ -155,15 +146,6 @@ export default function (app, db) {
             amount: req.body.amount,
         })
         next()
-
-        // db.collection('accounts').update(details, note, (err, result) => {
-        //     if (err) {
-        //         res.send({ 'error': 'An error has occurred' });
-        //     }
-        //     else {
-        //         res.send(note);
-        //     }
-        // });
     }, (req, res) => {
         res.send(true)
     });
@@ -247,5 +229,33 @@ export default function (app, db) {
         // } else {
         //     res.send({ 'error': 'An error has occurred' })
         // }
+    })
+
+    app.post('/deleteAccount', (req, res) => {
+        const username = authorization(req, res)
+        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
+        db.collection('accounts').remove(dFrom, (err, result) => {
+            if (err) {
+                res.send({ 'error': 'An error has occurred' });
+            }
+            else {
+                res.send(true);
+            }
+        })
+    })
+
+    app.post('/whatsnew', (req, res) => {
+        const username = authorization(req, res)
+        db.collection('news').
+            find({
+                username,
+                version: "1.0.1"
+            }).
+            toArray().
+            then((result) => {
+                res.send(result[0].updateDescription);
+            }, (err) => {
+                console.log('Error:', err);
+            });
     })
 }
