@@ -31,7 +31,13 @@ function editAccount(details, db, obj) {
         }
         editObj.amount = amount
     } else {
-        editObj = obj
+            editObj.accountName = obj.accountNameFrom;
+            editObj.amount = obj.amount;
+            editObj.currency = obj.currency;
+            editObj.pname = obj.pname;
+            editObj.accountDate = obj.accountDate;
+            editObj.accountNumber = obj.accountNumber;
+            editObj.accountPeople = obj.accountPeople;
     }
     db.collection('accounts').update(details, { $set: editObj }, (err, result) => {
         if (err) {
@@ -100,17 +106,18 @@ export default function (app, db) {
                 console.log('Error:', err);
             });
     });
+
     // добавить счет
     app.post('/addAccount', (req, res) => {
         const username = authorization(req, res)
         const account = {
-            name: req.body.name,
+            accountName: req.body.accountName,
             amount: req.body.amount,
             currency: req.body.currency,
             pname: req.body.pname,
-            date: req.body.date,
-            number: req.body.number,
-            people: req.body.people,
+            accountDate: req.body.accountDate,
+            accountNumber: req.body.accountNumber,
+            accountPeople: req.body.accountPeople,
             id: req.body._id,
             username,
         };
