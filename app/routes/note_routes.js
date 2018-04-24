@@ -19,7 +19,21 @@ function authorization(req, res) {
 }
 
 function editAccount(details, db, obj) {
-    db.collection('accounts').update(details, {$set: obj}, (err, result) => {
+    let editObj = {}
+    if (obj.typeOperation) {
+        const typeOperation = Number(obj.typeOperation)
+        const accountFromAmount = obj.accountFromAmount
+        let amount = obj.amount
+        if (typeOperation) {
+            amount = accountFromAmount + amount
+        } else {
+            amount = accountFromAmount - amount
+        }
+        editObj.amount = amount
+    } else {
+        editObj = obj
+    }
+    db.collection('accounts').update(details, { $set: editObj }, (err, result) => {
         if (err) {
             return { 'error': 'An error has occurred' };
         }
@@ -68,6 +82,24 @@ export default function (app, db) {
                 console.log('Error:', err);
             });
     });
+    // получить последние 5 операций
+    app.post('/getOperations', (req, res) => {
+        const username = authorization(req, res)
+        const limit = req.body.limit || 5;
+        console.log(limit)
+        db.collection('operations').
+            find({
+                username
+            }).
+            sort({ "_id": -1 }).
+            limit(limit).
+            toArray().
+            then((result) => {
+                res.send(result);
+            }, (err) => {
+                console.log('Error:', err);
+            });
+    });
     // добавить счет
     app.post('/addAccount', (req, res) => {
         const username = authorization(req, res)
@@ -87,7 +119,12 @@ export default function (app, db) {
                 res.send({ 'error': 'An error has occurred' });
             }
             else {
-                res.send(result.ops[0]);
+                if (result.ops.length) {
+                    res.send(result.ops[0]);
+                } else {
+                    res.send({})
+                }
+                
             }
         });
     });
@@ -142,9 +179,10 @@ export default function (app, db) {
         console.log('editAccount')
         const username = authorization(req, res)
         const dFrom = { '_id': new ObjectID(req.body.idFrom) };
-        const res1 = editAccount(dFrom, db, {
-            amount: req.body.amount,
-        })
+        // const res = editAccount(dFrom, db, {
+        //     amount: req.body.amount,
+        // })
+        editAccount(dFrom, db, req.body)
         next()
     }, (req, res) => {
         res.send(true)
@@ -213,15 +251,17 @@ export default function (app, db) {
     app.post('/transfer', (req, res, next) => {
         const username = authorization(req, res)
         const dFrom = { '_id': new ObjectID(req.body.idFrom) };
-        const res1 = editAccount(dFrom, db, {
-            amount: req.body.accountFromAmount - req.body.amount,
-        })
+        // const res1 = editAccount(dFrom, db, {
+        //     amount: req.body.accountFromAmount - req.body.amount,
+        // })
+        const res1 = editAccount(dFrom, db, req.body)
         next()
     }, (req, res, next) => {
         const dTo = { '_id': new ObjectID(req.body.idTo) };
-        const res2 = editAccount(dTo, db, {
-            amount: req.body.accountToAmount + req.body.amount,
-        })
+        // const res2 = editAccount(dTo, db, {
+        //     amount: req.body.accountToAmount + req.body.amount,
+        // })
+        const res2 = editAccount(dFrom, db, req.body)
         next()
     }, (req, res) => {
         // if (res1 && res2) {
@@ -253,7 +293,11 @@ export default function (app, db) {
             }).
             toArray().
             then((result) => {
-                res.send(result[0]);
+                if (result && result.length) {
+                    res.send(result[0]);
+                } else {
+                    res.send({})
+                }
             }, (err) => {
                 console.log('Error:', err);
             });
@@ -267,10 +311,15 @@ export default function (app, db) {
         }
         db.collection('news').update(id, { $set: obj }, (err, result) => {
             if (err) {
-                return { 'error': 'An error has occurred' };
+                res.send({ 'error': 'An error has occurred' });
             }
             else {
-                return result;
+                console.log(result)
+                if (result) {
+                    res.send(result)
+                } else {
+                    res.send({})
+                }
             }
         })
     }) 
