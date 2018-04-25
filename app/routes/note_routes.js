@@ -31,13 +31,27 @@ function editAccount(details, db, obj) {
         }
         editObj.amount = amount
     } else {
+        if (obj.accountNameFrom) {
             editObj.accountName = obj.accountNameFrom;
+        }
+        if (obj.accountNameFrom) {
+            editObj.accountName = obj.accountNameFrom;
+        }
+        if (obj.amount) {
             editObj.amount = obj.amount;
+        }
+        if (obj.currency) {
             editObj.currency = obj.currency;
-            editObj.pname = obj.pname;
+        }
+        if (obj.accountDate) {
             editObj.accountDate = obj.accountDate;
+        }
+        if (obj.accountNumber) {
             editObj.accountNumber = obj.accountNumber;
+        }
+        if (obj.accountPeople) {
             editObj.accountPeople = obj.accountPeople;
+        } 
     }
     db.collection('accounts').update(details, { $set: editObj }, (err, result) => {
         if (err) {
