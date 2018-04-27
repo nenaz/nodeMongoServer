@@ -20,15 +20,12 @@ function authorization(req, res) {
 
 function editAccount(details, db, obj) {
     let editObj = {}
-    if (obj.typeOperation) {
-        const typeOperation = Number(obj.typeOperation)
-        const accountFromAmount = obj.accountFromAmount
-        let amount = obj.amount
-        if (typeOperation) {
-            amount = accountFromAmount + amount
-        } else {
-            amount = accountFromAmount - amount
-        }
+    console.dir(obj)
+    if (obj.transfer) {
+        const typeOperation = obj.typeOperation
+        const amount = typeOperation
+            ? obj.accountToAmount + obj.amount
+            : obj.accountFromAmount - obj.amount
         editObj.amount = amount
     } else {
         if (obj.accountNameFrom) {
@@ -74,7 +71,6 @@ export default function (app, db) {
             operCoord: req.body.operCoord,
             typeOperation: req.body.typeOperation,
             categoryId: req.body.categoryId,
-            typeOperation: req.body.typeOperation,
             username
         };
         db.collection('operations').insert(operations, (err, result) => {
@@ -106,7 +102,6 @@ export default function (app, db) {
     app.post('/getOperations', (req, res) => {
         const username = authorization(req, res)
         const limit = req.body.limit || 5;
-        console.log(limit)
         db.collection('operations').
             find({
                 username
@@ -197,12 +192,8 @@ export default function (app, db) {
 
     // обновление названия и сумму счета(редактирование)
     app.post('/editAccount', (req, res, next) => {
-        console.log('editAccount')
         const username = authorization(req, res)
         const dFrom = { '_id': new ObjectID(req.body.idFrom) };
-        // const res = editAccount(dFrom, db, {
-        //     amount: req.body.amount,
-        // })
         editAccount(dFrom, db, req.body)
         next()
     }, (req, res) => {
@@ -227,7 +218,6 @@ export default function (app, db) {
                         return res.sendStatus(401);
                     }
                     bcrypt.compare(password, result[0].hash, (err, valid) => {
-                        console.log('valid = ' + valid);
                         if (err) {
                             return res.sendStatus(500);
                         }
@@ -271,25 +261,17 @@ export default function (app, db) {
 
     app.post('/transfer', (req, res, next) => {
         const username = authorization(req, res)
+        req.body.typeOperation = 0
         const dFrom = { '_id': new ObjectID(req.body.idFrom) };
-        // const res1 = editAccount(dFrom, db, {
-        //     amount: req.body.accountFromAmount - req.body.amount,
-        // })
         const res1 = editAccount(dFrom, db, req.body)
         next()
     }, (req, res, next) => {
+        req.body.typeOperation = 1
         const dTo = { '_id': new ObjectID(req.body.idTo) };
-        // const res2 = editAccount(dTo, db, {
-        //     amount: req.body.accountToAmount + req.body.amount,
-        // })
-        const res2 = editAccount(dFrom, db, req.body)
+        const res2 = editAccount(dTo, db, req.body)
         next()
     }, (req, res) => {
-        // if (res1 && res2) {
-            res.send(true)
-        // } else {
-        //     res.send({ 'error': 'An error has occurred' })
-        // }
+        res.send(true)
     })
 
     app.post('/deleteAccount', (req, res) => {
