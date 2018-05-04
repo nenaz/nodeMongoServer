@@ -20,14 +20,8 @@ function authorization(req, res) {
 
 function editAccount(details, db, obj) {
     let editObj = {}
-    console.dir(obj)
-    if (obj.transfer) {
-        const typeOperation = obj.typeOperation
-        const amount = typeOperation
-            ? obj.accountToAmount + obj.amount
-            : obj.accountFromAmount - obj.amount
-        editObj.amount = amount
-    } else {
+    console.log(obj.typeOperation)
+    if (!obj.transfer) {
         if (obj.accountNameFrom) {
             editObj.accountName = obj.accountNameFrom;
         }
@@ -48,8 +42,54 @@ function editAccount(details, db, obj) {
         }
         if (obj.accountPeople) {
             editObj.accountPeople = obj.accountPeople;
-        } 
+        }
+        if (obj.amount) {
+            if (obj.typeOperation) {
+                editObj.amount = obj.typeOperation * 1
+                    ? obj.accountFromAmount + obj.amount
+                    : obj.accountFromAmount - obj.amount
+            } else {
+                editObj.amount = obj.amount
+            }
+        }
+    } else {
+        editObj.amount = obj.typeOperation
+            ? obj.accountToAmount + obj.amount
+            : obj.accountFromAmount - obj.amount
     }
+
+
+    console.dir(editObj)
+
+    // if (obj.transfer) {
+    //     const typeOperation = obj.typeOperation
+    //     const amount = typeOperation
+    //         ? obj.accountToAmount + obj.amount
+    //         : obj.accountFromAmount - obj.amount
+    //     editObj.amount = amount
+    // } else {
+        // if (obj.accountNameFrom) {
+        //     editObj.accountName = obj.accountNameFrom;
+        // }
+        // if (obj.accountNameFrom) {
+        //     editObj.accountName = obj.accountNameFrom;
+        // }
+        // if (obj.amount) {
+        //     editObj.amount = obj.amount;
+        // }
+        // if (obj.currency) {
+        //     editObj.currency = obj.currency;
+        // }
+        // if (obj.accountDate) {
+        //     editObj.accountDate = obj.accountDate;
+        // }
+        // if (obj.accountNumber) {
+        //     editObj.accountNumber = obj.accountNumber;
+        // }
+        // if (obj.accountPeople) {
+        //     editObj.accountPeople = obj.accountPeople;
+        // } 
+    // }
     db.collection('accounts').update(details, { $set: editObj }, (err, result) => {
         if (err) {
             return { 'error': 'An error has occurred' };
