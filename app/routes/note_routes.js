@@ -141,7 +141,9 @@ export default function (app, db) {
     // получить последние 5 операций
     app.post('/getOperations', (req, res) => {
         const username = authorization(req, res)
-        const limit = req.body.limit || 5;
+        const limit = req.body.limit !== undefined
+            ? req.body.limit
+            : 5;
         db.collection('operations').
             find({
                 username
