@@ -334,7 +334,7 @@ export default function (app, db) {
         db.collection('news').
             find({
                 username,
-                version: "1.0.1"
+                version: req.body.version,
             }).
             toArray().
             then((result) => {
