@@ -82,7 +82,6 @@ function formatingDataForChart(data) {
             color: COLORS['color' + i]
         })
     }
-
     return fData
 }
 
@@ -93,6 +92,7 @@ export default function (app, db) {
             amount: req.body.amount,
             currency: req.body.currency,
             data: req.body.data,
+            date: req.body.date,
             account: req.body.id,
             operCoord: req.body.operCoord,
             typeOperation: req.body.typeOperation,
@@ -153,9 +153,9 @@ export default function (app, db) {
             "date": {
                 $gte: req.body.nowMonthDate
             }
-        }).toArray().
+        }).
+        toArray().
         then((data) => {
-            // res.send(result)
             res.send(formatingDataForChart(data))
         }, (err) => {
             res.send(err)
