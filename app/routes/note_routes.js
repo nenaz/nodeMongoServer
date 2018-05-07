@@ -76,11 +76,13 @@ function formatingDataForChart(data) {
                 sum += item.amount * 1
             }
         })
-        fData.push({
-            id: i,
-            value: sum,
-            color: COLORS['color' + i]
-        })
+        if (sum) {
+            fData.push({
+                id: i,
+                value: sum,
+                color: COLORS['color' + i]
+            })
+        }
     }
     return fData
 }
