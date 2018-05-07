@@ -4,6 +4,7 @@ import dataBase from '../../db'
 import bcrypt from 'bcrypt'
 import jwt from 'jwt-simple'
 import config from '../../config/db'
+import { COLORS } from '../../config/consts'
 
 function authorization(req, res) {
     if (!req.headers['authorization']) {
@@ -20,7 +21,6 @@ function authorization(req, res) {
 
 function editAccount(details, db, obj) {
     let editObj = {}
-    console.log(obj.typeOperation)
     if (!obj.transfer) {
         if (obj.accountNameFrom) {
             editObj.accountName = obj.accountNameFrom;
@@ -57,39 +57,6 @@ function editAccount(details, db, obj) {
             ? obj.accountToAmount + obj.amount
             : obj.accountFromAmount - obj.amount
     }
-
-
-    console.dir(editObj)
-
-    // if (obj.transfer) {
-    //     const typeOperation = obj.typeOperation
-    //     const amount = typeOperation
-    //         ? obj.accountToAmount + obj.amount
-    //         : obj.accountFromAmount - obj.amount
-    //     editObj.amount = amount
-    // } else {
-        // if (obj.accountNameFrom) {
-        //     editObj.accountName = obj.accountNameFrom;
-        // }
-        // if (obj.accountNameFrom) {
-        //     editObj.accountName = obj.accountNameFrom;
-        // }
-        // if (obj.amount) {
-        //     editObj.amount = obj.amount;
-        // }
-        // if (obj.currency) {
-        //     editObj.currency = obj.currency;
-        // }
-        // if (obj.accountDate) {
-        //     editObj.accountDate = obj.accountDate;
-        // }
-        // if (obj.accountNumber) {
-        //     editObj.accountNumber = obj.accountNumber;
-        // }
-        // if (obj.accountPeople) {
-        //     editObj.accountPeople = obj.accountPeople;
-        // } 
-    // }
     db.collection('accounts').update(details, { $set: editObj }, (err, result) => {
         if (err) {
             return { 'error': 'An error has occurred' };
@@ -98,6 +65,25 @@ function editAccount(details, db, obj) {
             return result;
         }
     });
+}
+
+function formatingDataForChart(data) {
+    const fData = []
+    for (let i = 0; i < 10; i += 1) {
+        let sum = 0;
+        data.map(item => {
+            if (item.categoryId[0] * 1 === i && item.typeOperation === "0") {
+                sum += item.amount * 1
+            }
+        })
+        fData.push({
+            id: i,
+            value: sum,
+            color: COLORS['color' + i]
+        })
+    }
+
+    return fData
 }
 
 export default function (app, db) {
@@ -144,10 +130,11 @@ export default function (app, db) {
         const limit = req.body.limit !== undefined
             ? req.body.limit
             : 5;
+        const query = {
+            username,
+        }
         db.collection('operations').
-            find({
-                username
-            }).
+            find(query).
             sort({ "_id": -1 }).
             limit(limit).
             toArray().
@@ -157,6 +144,23 @@ export default function (app, db) {
                 console.log('Error:', err);
             });
     });
+
+    app.post('/getOperLastMonth', (req, res) => {
+        const username = authorization(req, res)
+        db.collection('operations').
+        find({
+            username,
+            "date": {
+                $gte: req.body.nowMonthDate
+            }
+        }).toArray().
+        then((data) => {
+            // res.send(result)
+            res.send(formatingDataForChart(data))
+        }, (err) => {
+            res.send(err)
+        })
+    })
 
     // добавить счет
     app.post('/addAccount', (req, res) => {
@@ -367,5 +371,5 @@ export default function (app, db) {
                 }
             }
         })
-    }) 
+    })
 }
