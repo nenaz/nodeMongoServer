@@ -249,16 +249,42 @@ export default function (app, db) {
     });
 
     app.post('/authUser', (req, res) => {
-        if (!req.body.username || !req.body.password) {
+        if (!req.body.passcode && !req.body.username && !req.body.password) {
             return res.sendStatus(400);
         }
         else {
             const username = req.body.username;
-            const password = req.body.password;
-            db.collection('users').
+            if (req.body.passcode) {
+                const passcode = req.body.passcode
+                db.collection('users').
+                find({
+                    username
+                }).
+                toArray().
+                then((result) => {
+                    if (!result.length) {
+                        return res.sendStatus(401);
+                    }
+                    bcrypt.compare(passcode, result[0].passcode, (err, valid) => {
+                        if (err) {
+                            return res.sendStatus(500);
+                        }
+                        if (!valid) {
+                            return res.sendStatus(401);
+                        }
+                        const token = jwt.encode({ username: result[0].username }, config.secret);
+                        res.send({
+                            token,
+                            auth: true
+                        });
+                    })
+                }, (err) => {
+                    return res.sendStatus(500);
+                })
+            } else {
+                db.collection('users').
                 find({
                     username: username,
-                    password: password,
                 }).
                 toArray().
                 then((result) => {
@@ -281,15 +307,16 @@ export default function (app, db) {
                 }, (err) => {
                     return res.sendStatus(500);
                 });
+            }
         }
     });
 
     app.post('/newUser', (req, res, next) => {
         const note = {
             username: req.body.username,
-            password: req.body.password,
         };
-        bcrypt.hash(note.password, 10, (err, hash) => {
+        const password = req.body.password
+        bcrypt.hash(password, 10, (err, hash) => {
             if (err) {
                 res.sendStatus(500);
             }
@@ -373,5 +400,59 @@ export default function (app, db) {
                 }
             }
         })
+    })
+
+    app.post('/setPass', (req, res) => {
+        if (!req.body.username || !req.body.password) {
+            return res.sendStatus(400);
+        }
+        else {
+            const username = req.body.username;
+            const password = req.body.password;
+            const passcode = req.body.passcode;
+            db.collection('users').
+            find({
+                username: username,
+            }).
+            toArray().
+            then((result) => {
+                if (!result.length) {
+                    return res.sendStatus(401);
+                }
+                bcrypt.hash(passcode, 10, (err, hash) => {
+                    if (err) {
+                        res.sendStatus(500);
+                    }
+                    else {
+                        const editObj = {
+                            passcode: hash
+                        }
+                        const details = { '_id': new ObjectID(result[0]._id) };
+                        db.collection('users').update(details, { $set: editObj }, (err, rUpdate) => {
+                            if (err) {
+                                return { 'error': 'An error has occurred' };
+                            }
+                            else {
+                                bcrypt.compare(password, result[0].hash, (err, valid) => {
+                                    if (err) {
+                                        return res.sendStatus(500);
+                                    }
+                                    if (!valid) {
+                                        return res.sendStatus(401);
+                                    }
+                                    const token = jwt.encode({ username: username }, config.secret);
+                                    res.send({
+                                        token,
+                                        auth: true
+                                    });
+                                });
+                            }
+                        })
+                    }
+                })
+            }, (err) => {
+                return res.sendStatus(500);
+            });
+        }
     })
 }
