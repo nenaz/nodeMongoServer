@@ -43,6 +43,9 @@ function editAccount(details, db, obj) {
         if (obj.accountPeople) {
             editObj.accountPeople = obj.accountPeople;
         }
+        if (obj.consider !== undefined) {
+            editObj.consider = obj.consider;
+        }
         if (obj.amount) {
             if (obj.typeOperation) {
                 editObj.amount = obj.typeOperation * 1
