@@ -464,4 +464,35 @@ export default function (app, db) {
             });
         }
     })
+
+    app.post('/setHashData', (req, res) => {
+        const obj = req.body
+        const data = jwt.encode(obj, config.secret)
+        bcrypt.hash(data, 10, (err, hash) => {
+            const encodeObj = {
+                data,
+                hash
+            }
+            db.collection('news').insert(encodeObj, (err, result) => {
+                if (err) {
+                    res.send({ 'error': 'An error has occurred' });
+                }
+                else {
+                    res.send(result.ops[0]);
+                }
+            });
+        })
+    })
+
+    app.post('/getHashData', (req, res) => {
+        db.collection('news').
+        find({
+            hash: req.body.hash
+        }).
+        toArray().
+        then((result) => {
+            const decodeObj = jwt.decode(result[0].data, config.secret)
+            res.send(decodeObj);
+        })
+    })
 }
