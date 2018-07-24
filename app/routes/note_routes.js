@@ -90,6 +90,22 @@ function formatingDataForChart(data) {
     return fData
 }
 
+function updateOperations(data, db, username, res) {
+    data.map((item) => {
+        const editObj = {
+            username,
+        }
+        const details = { '_id': new ObjectID(item._id) };
+        db.collection('operations').update(details, { $set: editObj }, (err, rUpdate) => {
+            if (err) {
+                return { 'error': 'An error has occurred' };
+            } else {
+                return true
+            }
+        })
+    })
+}
+
 export default function (app, db) {
     app.post('/addOperation', (req, res) => {
         const username = authorization(req, res)
@@ -494,5 +510,20 @@ export default function (app, db) {
             const decodeObj = jwt.decode(result[0].data, config.secret)
             res.send(decodeObj);
         })
+    })
+
+    app.post('/selectOperations', (req, res) => {
+        const newusername = req.body.newusername;
+        const username = req.body.username;
+        db.collection('operations').
+            find({
+                username,
+            }).
+            toArray().
+            then((data) => {
+                res.send(updateOperations(data, db, newusername, res))
+            }, (err) => {
+                res.send(err)
+            })
     })
 }
