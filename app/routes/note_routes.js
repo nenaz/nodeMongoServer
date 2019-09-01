@@ -268,8 +268,9 @@ export default function (app, db) {
     });
 
     app.post('/authUser', (req, res) => {
-        // console.log('1')
-        if (!req.body.passcode && !req.body.username && !req.body.password) {
+        console.log('dirname', __dirname);
+        // console.log('path.dirname', path.dirname);
+        if (!req.body.username && !req.body.password) {
             // console.log('2')
             return res.sendStatus(400);
         }
