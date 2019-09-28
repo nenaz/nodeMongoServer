@@ -1,23 +1,30 @@
 import { ObjectID } from 'mongodb'
+import * as asyncHandler from 'express-async-handler'
 import db from '../../config/db'
 import dataBase from '../../db'
 import bcrypt from 'bcrypt'
 import jwt from 'jwt-simple'
 import config from '../../config/db'
 import { COLORS } from '../../config/consts'
+import { authorization } from './auth/auth';
+import { deleteAccount } from './accounts/get-accounts/delete-account'
+import { getAccounts } from './accounts/get-accounts/get-accounts'
+import { addAccount } from './accounts/get-accounts/add-account';
+import { getUsers } from './accounts/get-accounts/get-users';
+import { setOnline } from './users/set-online'
 
-function authorization(req, res) {
-    if (!req.headers['authorization']) {
-        return res.sendStatus(401);
-    }
-    try {
-        const username = jwt.decode(req.headers['authorization'], config.secret).username;
-        return req.body.username = username
-    }
-    catch (err) {
-        return res.sendStatus(401);
-    }
-}
+// function authorization(req, res) {
+//     if (!req.headers['authorization']) {
+//         return res.sendStatus(401);
+//     }
+//     try {
+//         const username = jwt.decode(req.headers['authorization'], config.secret).username;
+//         return req.body.username = username
+//     }
+//     catch (err) {
+//         return res.sendStatus(401);
+//     }
+// }
 
 function editAccount(details, db, obj) {
     let editObj = {}
@@ -184,48 +191,47 @@ export default function (app, db) {
     })
 
     // добавить счет
-    app.post('/addAccount', (req, res) => {
-        const username = authorization(req, res)
-        const account = {
-            accountName: req.body.accountName,
-            amount: req.body.amount,
-            currency: req.body.currency,
-            pname: req.body.pname,
-            accountDate: req.body.accountDate,
-            accountNumber: req.body.accountNumber,
-            accountPeople: req.body.accountPeople,
-            id: req.body._id,
-            username,
-        };
-        db.collection('accounts').insert(account, (err, result) => {
-            if (err) {
-                res.send({ 'error': 'An error has occurred' });
-            }
-            else {
-                if (result.ops.length) {
-                    res.send(result.ops[0]);
-                } else {
-                    res.send({})
-                }
-                
-            }
+    app.post('/addAccount', (req, res, next) => {
+      addAccount(req, res, db)
+        .then(() => {
+          getAccounts(req, res, db)
+            .then((result) => {
+              res.send(result)
+            });
         });
     });
 
     // получить список счетов
     app.post('/getAccounts', (req, res) => {
-        const username = authorization(req, res)
-        db.collection('accounts').
-            find({
-                username
-            }).
-            toArray().
-            then((result) => {
-                res.send(result);
-            }, (err) => {
-                console.log('Error:', err);
-            });
+      getAccounts(req, res, db)
+        .then((result) => {
+          console.log('result getAccounts', result)
+          res.send(result);
+        });
     });
+
+    // получить всех пользователей
+    app.post('/getUsers', (req, res, next) => {
+      getUsers(req, res, db)
+        .then((result) => {
+          res.send(result);
+        });
+    });
+
+    // изменить статус на Online
+    app.post('/setUserOnline', (req, res, next) => {
+      setOnline(req, res, db)
+        .then((result) => {
+          res.send(result);
+        });
+    });
+
+    // app.post('/setUserOnline', (req, res, next) => {
+    //   setOnline(req, res, db)
+    //     .then((result) => {
+    //       res.send(result);
+    //     });
+    // });
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
@@ -271,10 +277,10 @@ export default function (app, db) {
         console.log('dirname', __dirname);
         // console.log('path.dirname', path.dirname);
         if (!req.body.username && !req.body.password) {
-            // console.log('2')
+            console.log('2')
             return res.sendStatus(400);
         }
-        // console.log('3')
+        console.log('3')
         const username = req.body.username;
         if (req.body.passcode) {
             const passcode = req.body.passcode
@@ -297,7 +303,7 @@ export default function (app, db) {
                     const token = jwt.encode({ username: result[0].username }, config.secret);
                     res.send({
                         token,
-                        auth: true
+                        auth: true,
                     });
                 })
             }, (err) => {
@@ -312,7 +318,7 @@ export default function (app, db) {
             }).
             toArray().
             then((result) => {
-                // console.log('5')
+              console.log('result[0]', result);
                 if (!result.length) {
                     return res.sendStatus(401);
                 }
@@ -328,7 +334,8 @@ export default function (app, db) {
                     const token = jwt.encode({ username: username }, config.secret);
                     res.send({
                         token,
-                        auth: true
+                        auth: true,
+                        _id: result[0]._id,
                     });
                 });
             }, (err) => {
@@ -376,16 +383,13 @@ export default function (app, db) {
     })
 
     app.post('/deleteAccount', (req, res) => {
-        const username = authorization(req, res)
-        const dFrom = { '_id': new ObjectID(req.body.idFrom) };
-        db.collection('accounts').remove(dFrom, (err, result) => {
-            if (err) {
-                res.send({ 'error': 'An error has occurred' });
-            }
-            else {
-                res.send(true);
-            }
-        })
+        return deleteAccount(req, res, db)
+        .then(() => {
+          getAccounts(req, res, db)
+            .then((result) => {
+              res.send(result)
+            });
+        });
     })
 
     app.post('/whatsnew', (req, res) => {
