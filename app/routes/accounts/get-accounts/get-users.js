@@ -1,7 +1,7 @@
 import { authorization } from '../../auth/auth';
 
 export const getUsers = (req, res, db) => {
-  const username = authorization(req, res)
+  // const username = authorization(req, res)
   return new Promise((resolve, reject) => {
     db.collection('users').
       find({}).

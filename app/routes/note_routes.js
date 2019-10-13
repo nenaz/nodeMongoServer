@@ -1,5 +1,4 @@
 import { ObjectID } from 'mongodb'
-import * as asyncHandler from 'express-async-handler'
 import db from '../../config/db'
 import dataBase from '../../db'
 import bcrypt from 'bcrypt'
@@ -12,6 +11,7 @@ import { getAccounts } from './accounts/get-accounts/get-accounts'
 import { addAccount } from './accounts/get-accounts/add-account';
 import { getUsers } from './accounts/get-accounts/get-users';
 import { setOnline } from './users/set-online'
+import { setOnlineCoordinates } from './users/set-coordinates'
 
 // function authorization(req, res) {
 //     if (!req.headers['authorization']) {
@@ -226,12 +226,15 @@ export default function (app, db) {
         });
     });
 
-    // app.post('/setUserOnline', (req, res, next) => {
-    //   setOnline(req, res, db)
-    //     .then((result) => {
-    //       res.send(result);
-    //     });
-    // });
+    // записать изменение координат пользователя
+    app.post('/setUserOnlineCoordinates', (req, res, next) => {
+      const username = authorization(req, res);
+
+      setOnlineCoordinates(req, res, db, username)
+        .then((result) => {
+          res.send(result);
+        });
+    });
 
     // обновить сумму у счетов после создания операции
     app.post('/updateAccountAmount', (req, res) => {
@@ -530,5 +533,12 @@ export default function (app, db) {
             }, (err) => {
                 res.send(err)
             })
+    })
+
+    app.get('/test', (req, res) => {
+        res.send('empty GET');
+    })
+    app.post('/test', (req, res) => {
+        res.send('empty POST');
     })
 }
