@@ -2,10 +2,13 @@
   "name": "express-4.x-local-example",
   "version": "0.0.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "dev": "nodemon server.js",
     "start": "node start.js",
-    "babel-node": "babel-node"
+    "babel-node": "babel-node",
+    "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint --ext .js --cache src"
   },
   "license": "Unlicense",
   "dependencies": {
@@ -27,6 +30,11 @@
     "ninstall": "^1.1.2"
   },
   "devDependencies": {
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^24.9.0",
+    "eslint-plugin-jest": "^22.19.0",
+    "jest": "^24.9.0",
+    "jest-cli": "^24.9.0",
     "uuid": "^3.3.3"
   },
   "engines": {
