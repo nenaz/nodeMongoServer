@@ -306,6 +306,7 @@ export default function (app, db) {
                     const token = jwt.encode({ username: result[0].username }, config.secret);
                     res.send({
                         token,
+                        userRole: result[0].userRole,
                         auth: true,
                     });
                 })
@@ -338,6 +339,7 @@ export default function (app, db) {
                     res.send({
                         token,
                         auth: true,
+                        userRole: result[0].userRole,
                         _id: result[0]._id,
                     });
                 });
