@@ -314,7 +314,7 @@ export default function (app, db) {
                 return res.sendStatus(500);
             })
         } else {
-            // console.log('4')
+            console.log('4')
             const password = req.body.password
             db.collection('users').
             find({
@@ -328,7 +328,7 @@ export default function (app, db) {
                 }
                 // console.log('6')
                 bcrypt.compare(password, result[0].hash, (err, valid) => {
-                    // console.log('7')
+                    console.log('7')
                     if (err) {
                         return res.sendStatus(500);
                     }
@@ -365,7 +365,10 @@ export default function (app, db) {
                         res.send({ 'error': 'An error has occurred' });
                     }
                     else {
-                        res.send(result.ops[0]);
+                        res.send({
+                            ...result.ops[0],
+                            success: true,
+                        });
                     }
                 });
             }
