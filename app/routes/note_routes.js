@@ -12,6 +12,7 @@ import { addAccount } from './accounts/get-accounts/add-account';
 import { getUsers } from './accounts/get-accounts/get-users';
 import { setOnline } from './users/set-online'
 import { setOnlineCoordinates } from './users/set-coordinates'
+import { getUsersOnline } from './users/get-users-online'
 
 // function authorization(req, res) {
 //     if (!req.headers['authorization']) {
@@ -213,6 +214,14 @@ export default function (app, db) {
     // получить всех пользователей
     app.post('/getUsers', (req, res, next) => {
       getUsers(req, res, db)
+        .then((result) => {
+          res.send(result);
+        });
+    });
+
+    // получить всех пользователей online
+    app.post('/getUsersOnline', (req, res, next) => {
+        getUsersOnline(req, res, db)
         .then((result) => {
           res.send(result);
         });

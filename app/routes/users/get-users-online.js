@@ -1,7 +1,7 @@
-import { authorization } from '../../auth/auth';
+import { authorization } from '../auth/auth';
 
 export const getUsersOnline = (req, res, db) => {
-  const username = authorization(req, res)
+  // const username = authorization(req, res)
   return new Promise((resolve, reject) => {
     db.collection('users').
       find({
@@ -9,7 +9,7 @@ export const getUsersOnline = (req, res, db) => {
       }).
       toArray().
       then((result) => {
-        // resolve(result);
+        resolve(result);
         
       }, (err) => {
         reject({ Error: err });
