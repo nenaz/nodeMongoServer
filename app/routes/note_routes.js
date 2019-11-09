@@ -348,8 +348,7 @@ export default function (app, db) {
                     res.send({
                         token,
                         auth: true,
-                        userRole: result[0].userRole,
-                        _id: result[0]._id,
+                        ...result[0],
                     });
                 });
             }, (err) => {
