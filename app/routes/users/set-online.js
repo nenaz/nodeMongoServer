@@ -1,6 +1,30 @@
 import { ObjectID } from 'mongodb'
 import { authorization } from '../auth/auth';
 
+export const setIsWatching = (req, res, db) => {
+  return new Promise((resolve, reject) => {
+    console.log('isWatching', req.body.isWatching);
+    db.collection('users').
+      find({
+        // _id: req.body._id,
+        _id: new ObjectID(req.body._id)
+      }).
+      toArray().
+      then((data) => {
+        console.log('data', data);
+        data.map((item) => {
+          const details = { '_id': new ObjectID(item._id) };
+          db.collection('users').update(details, { $set: { isWatching: req.body.isWatching }}, (err, rUpdate) => {
+            if (err) {
+              reject({ Error: err });
+            }
+            resolve(rUpdate);
+          });
+        });
+      })
+  })
+};
+
 export const setOnline = (req, res, db) => {
   // const username = authorization(req, res);
 

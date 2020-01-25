@@ -10,7 +10,7 @@ import { deleteAccount } from './accounts/get-accounts/delete-account'
 import { getAccounts } from './accounts/get-accounts/get-accounts'
 import { addAccount } from './accounts/get-accounts/add-account';
 import { getUsers } from './accounts/get-accounts/get-users';
-import { setOnline } from './users/set-online'
+import { setOnline, setIsWatching } from './users/set-online'
 import { setOnlineCoordinates } from './users/set-coordinates'
 import { getUsersOnline } from './users/get-users-online'
 
@@ -243,6 +243,13 @@ export default function (app, db) {
         .then((result) => {
           res.send(result);
         });
+    });
+
+    app.post('/activeUserIsWatching', (req, res, next) => {
+        setIsWatching(req, res, db)
+            .then((result) => {
+                res.send(result);
+            });
     });
 
     // обновить сумму у счетов после создания операции
