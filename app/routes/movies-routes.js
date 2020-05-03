@@ -40,7 +40,7 @@ export const moviesRoutes = (app, dataBase) => {
 
   app.post('/start', (req, res) => {
     const { fileName } = req.body;
-    fun(process.env.ROOT_FILMS_FOLDER, fileName);
+    fun(`${process.env.ROOT_FILMS_FOLDER}${fileName}`);
     res.send('RUN');
   });
 };

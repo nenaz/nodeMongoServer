@@ -1,4 +1,4 @@
-echo %1 %2
+echo %1
  cd \ 
 	C:\KMPlayer
-	start KMPlayer.exe %1%2
+	start KMPlayer.exe %1
