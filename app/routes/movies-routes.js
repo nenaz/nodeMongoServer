@@ -13,13 +13,21 @@ const fun = (name) => {
 const checkFiles = (data) => {
   const files = fs.readdirSync(process.env.ROOT_FILMS_FOLDER);
   const dataMod = data.map((item) => {
-    return {
+    const result = {
       ...item,
       isAvailability: files.includes(item.fileName),
-    };
+    }
+    try {
+      const imageData = fs.readFileSync(`${process.env.ROOT_IMAGE_FOLDER}${item.filmId}.webp`);
+      result.imageBase64 = 'data:image/webp;base64,' + imageData.toString('base64');
+
+    } catch(err) {
+      console.log('no such file or directory', item.filmId);
+    }
+    return result;
   });
   return dataMod;
-}; 
+};
 
 export const moviesRoutes = (app, dataBase) => {
   app.post('/get-movies', (req, res) => {
@@ -29,9 +37,10 @@ export const moviesRoutes = (app, dataBase) => {
       res.send(err);
     });
   });
+
   app.post('/start', (req, res) => {
     const { fileName } = req.body;
-    fun(fileName);
+    fun(process.env.ROOT_FILMS_FOLDER, fileName);
     res.send('RUN');
   });
 };
