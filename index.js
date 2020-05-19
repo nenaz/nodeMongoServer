@@ -3,10 +3,13 @@ import { MongoClient } from "mongodb";
 import { urlencoded, json } from "body-parser";
 import { url } from "./config/db";
 import routes from './app/routes';
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000
 
+console.log(__dirname);
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use(urlencoded({ extended: true }));
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', '*');

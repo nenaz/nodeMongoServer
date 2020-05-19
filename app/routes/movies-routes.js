@@ -31,7 +31,7 @@ const checkFiles = (data) => {
 
 export const moviesRoutes = (app, dataBase) => {
   app.post('/get-movies', (req, res) => {
-    dataBase.collection('films').find().toArray().then((result) => {
+    dataBase.collection('films').find().sort({ fileName: 1 }).toArray().then((result) => {
       res.send(checkFiles(result));
     }, (err) => {
       res.send(err);
@@ -43,4 +43,8 @@ export const moviesRoutes = (app, dataBase) => {
     fun(`${process.env.ROOT_FILMS_FOLDER}${fileName}`);
     res.send('RUN');
   });
+
+  app.get('/get-pic/229.jpg', (req, res) => {
+    res.sendFile('./assets/301.webp');
+  })
 };
