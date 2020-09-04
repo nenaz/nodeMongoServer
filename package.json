@@ -16,7 +16,7 @@
     "express": "^4.13.3",
     "express-session": "^1.11.3",
     "jwt-simple": "^0.5.1",
-    "mongodb": "^2.2.33"
+    "mongodb": "^3.6.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
